@@ -7,33 +7,172 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
+/* Page base */
 body {
-    font-family: Arial;
+    font-family: Arial, Helvetica, sans-serif;
     text-align: center;
     background: #111;
-    color: white;
-    margin-top: 80px;
+    color: #fff;
+    margin: 0;
+    min-height: 100vh;
+}
+
+/* Normal UI */
+.main-wrap {
+    padding-top: 80px;
+}
+h1 {
+    font-weight: 800;
+    margin: 8px 0 6px;
+    font-size: 2rem;
 }
 #count {
     font-size: 90px;
-    font-weight: bold;
+    font-weight: 900;
     margin: 20px;
+    letter-spacing: 6px;
 }
+#desc {
+    display: inline-block;
+    min-width: 220px;
+    max-width: 80%;
+    background: rgba(255,255,255,0.02);
+    padding: 6px 10px;
+    border-radius: 6px;
+    outline: none;
+    cursor: default;
+}
+
+/* Admin and login */
 #adminPanel {
     display: none;
+    margin-top: 20px;
 }
 #loginBtn {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 12px;
+    left: 12px;
+    z-index: 30;
+    background: #222;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 8px 10px;
+    border-radius: 6px;
 }
+button {
+    margin: 6px 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    background: #222;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Kill/404 screen */
 #killScreen {
     display: none;
-    font-size: 80px;
+    position: fixed;
+    inset: 0;
+    background: #fafafa;
+    color: #222;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
 }
-#errorO {
-    color: red;
+
+/* 404 card */
+.k404 {
+    max-width: 900px;
+    width: 100%;
+    background: #fff;
+    color: #222;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    padding: 36px;
+}
+.k404 .left {
+    flex: 0 0 220px;
+    text-align: center;
+}
+.k404 .left .big {
+    font-size: 84px;
+    font-weight: 800;
+    line-height: 1;
+    color: #111;
+}
+.k404 .right {
+    flex: 1;
+    text-align: left;
+}
+.k404 h2 {
+    margin: 0 0 8px 0;
+    font-size: 26px;
+}
+.k404 p {
+    margin: 0 0 14px 0;
+    color: #444;
+}
+
+/* the "Error" text with secret 'o' */
+.faux-error {
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 8px;
+}
+.error-o {
+    background: transparent;
+    border: none;
+    color: #007bff;
+    font-weight: 700;
     cursor: pointer;
+    padding: 0;
+    font-size: 1em;
+    line-height: 1;
+    display: inline;
+}
+/* style the error-o to look like normal text (disguised) */
+.error-o:not(:focus) {
+    color: #666;
+    text-decoration: none;
+}
+
+/* subtle input mock to make it look real */
+.mock-search {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.mock-input {
+    flex: 1;
+    background: #f1f3f5;
+    border: 1px solid #e3e6e8;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #444;
+}
+.mock-btn {
+    background: #007bff;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: none;
+}
+
+/* responsive */
+@media (max-width: 640px) {
+    .k404 {
+        flex-direction: column;
+        text-align: center;
+    }
+    .k404 .right { text-align: center; }
+    .k404 .left { flex: none; }
 }
 </style>
 </head>
@@ -42,23 +181,57 @@ body {
 
 <button id="loginBtn">Log In</button>
 
-<h1>Mr. Arrington Flirt Count</h1>
+<div class="main-wrap" id="mainUI">
+    <h1>Mr. Arrington Flirt Count</h1>
 
-<div id="count">0000</div>
+    <div id="count">0000</div>
 
-<p contenteditable="true" id="desc">Edit this description</p>
+    <p id="desc" contenteditable="false" title="(admin only) Edit description">Edit this description</p>
 
-<div id="adminPanel">
-    <button onclick="increment()">+1</button>
-    <button onclick="resetCount()">Reset</button>
-    <button onclick="killSwitch()">Kill Switch</button>
+    <div id="adminPanel">
+        <button id="incBtn">+1</button>
+        <button id="resetBtn">Reset</button>
+        <button id="killBtn">Kill Switch</button>
+    </div>
 </div>
 
-<div id="killScreen">
-    Err<span id="errorO">o</span>r 404
+<!-- Realistic 404 / kill screen -->
+<div id="killScreen" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="k404" role="document">
+        <div class="left" aria-hidden="true">
+            <div class="big">404</div>
+            <div style="color:#888;margin-top:8px;font-size:13px;">Page not found</div>
+        </div>
+        <div class="right">
+            <div class="faux-error" aria-hidden="false">
+                Err<span><button id="errorO" class="error-o" title="secret restore">o</button></span>r — We can't find that page
+            </div>
+            <h2>There's nothing here — yet</h2>
+            <p>It looks like the link is broken or the page has been moved. If you think this is an error, try returning to the homepage.</p>
+
+            <div class="mock-search" aria-hidden="true">
+                <div class="mock-input">Search or try the homepage</div>
+                <button class="mock-btn">Home</button>
+            </div>
+
+            <div style="margin-top:14px;color:#888;font-size:13px;">
+                If this is a site-wide state (kill switch), contact an admin to restore the site.
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+/*
+  Persistent document:
+  - path: data/counter
+  - fields: value (number), desc (string), isKilled (boolean)
+
+  Notes:
+  - Password is client-side for convenience (insecure). For real auth, use Firebase Auth.
+  - Kill switch persisted via isKilled so all clients see the 404.
+*/
+
 const firebaseConfig = {
    apiKey: "AIzaSyBEL3JE-abUdlGi_KwYZn7Dw5qY5f2E4SQ",
   authDomain: "flirt-counter.firebaseapp.com",
@@ -74,49 +247,160 @@ const counterDoc = db.collection("data").doc("counter");
 
 const PASSWORD = "0115";
 
-let isKilled = false;
+let isAdmin = false;
 
-async function loadCount(){
+// UI references
+const countEl = document.getElementById("count");
+const descEl = document.getElementById("desc");
+const adminPanel = document.getElementById("adminPanel");
+const loginBtn = document.getElementById("loginBtn");
+const killScreen = document.getElementById("killScreen");
+const errorO = document.getElementById("errorO");
+const incBtn = document.getElementById("incBtn");
+const resetBtn = document.getElementById("resetBtn");
+const killBtn = document.getElementById("killBtn");
+const mainUI = document.getElementById("mainUI");
+
+// Ensure document exists with defaults
+async function ensureDoc() {
     const doc = await counterDoc.get();
-    if(doc.exists){
-        document.getElementById("count").innerText =
-        doc.data().value.toString().padStart(4,"0");
-    } else {
-        counterDoc.set({value:0});
+    if(!doc.exists) {
+        await counterDoc.set({
+            value: 0,
+            desc: "Edit this description",
+            isKilled: false
+        });
     }
 }
-loadCount();
+ensureDoc();
 
-async function increment(){
-    const doc = await counterDoc.get();
-    let v = doc.data().value + 1;
-    await counterDoc.set({value:v});
-    loadCount();
-}
+// Real-time listener to keep UI in sync
+counterDoc.onSnapshot((doc) => {
+    if(!doc.exists) return;
+    const data = doc.data();
+    // value
+    const v = (typeof data.value === 'number') ? data.value : 0;
+    countEl.innerText = v.toString().padStart(4, "0");
+    // desc
+    if(typeof data.desc === 'string') {
+        // don't overwrite while admin is actively editing
+        if(!isAdmin || document.activeElement !== descEl) {
+            descEl.innerText = data.desc;
+        }
+    }
+    // kill
+    const killed = !!data.isKilled;
+    if(killed) {
+        showKillScreen();
+    } else {
+        hideKillScreen();
+    }
+}, (err) => {
+    console.error("snapshot error", err);
+});
 
-async function resetCount(){
-    await counterDoc.set({value:0});
-    loadCount();
-}
-
-document.getElementById("loginBtn").onclick = () => {
+// Login flow
+loginBtn.onclick = () => {
     const pass = prompt("Enter admin password:");
-    if(pass === PASSWORD){
-        document.getElementById("adminPanel").style.display = "block";
+    if(pass === PASSWORD) {
+        isAdmin = true;
+        adminPanel.style.display = "block";
+        descEl.setAttribute("contenteditable", "true");
+        loginBtn.innerText = "Logged In";
+        loginBtn.disabled = true;
+    } else {
+        alert("Wrong password");
     }
 };
 
-function killSwitch(){
-    isKilled = true;
-    document.body.innerHTML = document.getElementById("killScreen").outerHTML;
+// increment (atomic)
+incBtn.onclick = async () => {
+    try {
+        await counterDoc.update({
+            value: firebase.firestore.FieldValue.increment(1)
+        });
+    } catch (e) {
+        await counterDoc.set({ value: 1 }, { merge: true });
+    }
+};
+
+// reset
+resetBtn.onclick = async () => {
+    try {
+        await counterDoc.update({ value: 0 });
+    } catch (e) {
+        await counterDoc.set({ value: 0 }, { merge: true });
+    }
+};
+
+// set kill-switch (persisted)
+killBtn.onclick = async () => {
+    if(!confirm("Activate kill switch and show 404 for all visitors?")) return;
+    try {
+        await counterDoc.set({ isKilled: true }, { merge: true });
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+// Show/hide kill screen
+function showKillScreen() {
+    // Hide the main UI but keep DOM so event handlers remain
+    mainUI.style.display = "none";
+    // show kill screen
+    killScreen.style.display = "flex";
+    killScreen.setAttribute("aria-hidden", "false");
 }
 
-document.getElementById("errorO").onclick = () => {
-    const pass = prompt("Restore code:");
-    if(pass === PASSWORD){
-        location.reload();
-    }
+function hideKillScreen() {
+    killScreen.style.display = "none";
+    killScreen.setAttribute("aria-hidden", "true");
+    mainUI.style.display = "";
+    // Keep admin visibility correct after restore
+    adminPanel.style.display = isAdmin ? "block" : "none";
+    loginBtn.style.display = isAdmin ? "none" : "";
 }
+
+// The secret 'o' button prompts for admin code to restore
+errorO.onclick = async (e) => {
+    e.stopPropagation();
+    const pass = prompt("Restore code:");
+    if(pass === PASSWORD) {
+        try {
+            await counterDoc.set({ isKilled: false }, { merge: true });
+        } catch (err) {
+            console.error("restore failed", err);
+            alert("Restore failed; check console.");
+        }
+    } else {
+        alert("Wrong code");
+    }
+};
+
+// Save description to Firestore when admin stops editing (debounced)
+let descSaveTimer = null;
+descEl.addEventListener("input", () => {
+    if(!isAdmin) return;
+    clearTimeout(descSaveTimer);
+    descSaveTimer = setTimeout(async () => {
+        const newDesc = descEl.innerText.trim();
+        try {
+            await counterDoc.set({ desc: newDesc }, { merge: true });
+        } catch (e) {
+            console.error("desc save failed", e);
+        }
+    }, 700);
+});
+descEl.addEventListener("blur", async () => {
+    if(!isAdmin) return;
+    clearTimeout(descSaveTimer);
+    const newDesc = descEl.innerText.trim();
+    try {
+        await counterDoc.set({ desc: newDesc }, { merge: true });
+    } catch (e) {
+        console.error("desc save failed", e);
+    }
+});
 </script>
 
 </body>
