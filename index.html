@@ -35,10 +35,10 @@
   #reset-btn { background: #f44336; color: white; }
   #kill-switch-btn { background: #ff9800; color: white; }
   #kill-overlay {
-    display: none;
+    display: none; /* start hidden */
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #000; color: #fff; z-index: 1000;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    flex-direction: column; justify-content: center; align-items: center;
     font-size: 3em;
     user-select: none;
   }
