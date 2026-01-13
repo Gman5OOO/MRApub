@@ -35,7 +35,7 @@
   #reset-btn { background: #f44336; color: white; }
   #kill-switch-btn { background: #ff9800; color: white; }
   #kill-overlay {
-    display: none; /* start hidden */
+    display: none; /* hidden by default */
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #000; color: #fff; z-index: 1000;
     flex-direction: column; justify-content: center; align-items: center;
@@ -86,11 +86,11 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-  // Firebase config
+  // Firebase config with your database URL
   const firebaseConfig = {
     apiKey: "AIzaSyBEL3JE-abUdlGi_KwYZn7Dw5qY5f2E4SQ",
     authDomain: "flirt-counter.firebaseapp.com",
-    databaseURL: "https://flirt-counter.firebaseio.com",
+    databaseURL: "https://flirt-counter-default-rtdb.firebaseio.com/",
     projectId: "flirt-counter",
     storageBucket: "flirt-counter.firebasestorage.app",
     messagingSenderId: "891249082896",
@@ -100,7 +100,6 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  // Elements
   const counterEl = document.getElementById('counter');
   const descriptionEl = document.getElementById('description');
   const loginBtn = document.getElementById('login-btn');
@@ -114,12 +113,24 @@
   const kill0 = document.getElementById('kill-0');
   const killO = document.getElementById('kill-O');
 
-  // Load counter and description from Firebase
-  db.ref('flirtCount').get().then(snap => {
-    if(snap.exists()) counterEl.textContent = snap.val().toString().padStart(4,'0');
+  // Initialize defaults if empty
+  db.ref('flirtCount').once('value').then(snap => {
+    if(!snap.exists()) db.ref('flirtCount').set(0);
   });
-  db.ref('description').get().then(snap => {
-    if(snap.exists()) descriptionEl.textContent = snap.val();
+  db.ref('description').once('value').then(snap => {
+    if(!snap.exists()) db.ref('description').set("Welcome! Admins can edit this text.");
+  });
+
+  // Real-time listener for counter
+  db.ref('flirtCount').on('value', snapshot => {
+    const val = snapshot.val() || 0;
+    counterEl.textContent = val.toString().padStart(4,'0');
+  });
+
+  // Real-time listener for description
+  db.ref('description').on('value', snapshot => {
+    const val = snapshot.val() || "Welcome! Admins can edit this text.";
+    descriptionEl.textContent = val;
   });
 
   // Admin login
@@ -133,20 +144,17 @@
   incrementBtn.addEventListener('click', () => {
     let count = parseInt(counterEl.textContent);
     count++;
-    counterEl.textContent = count.toString().padStart(4,'0');
     db.ref('flirtCount').set(count);
   });
 
   // Reset counter
   resetBtn.addEventListener('click', () => {
-    counterEl.textContent = '0000';
     db.ref('flirtCount').set(0);
   });
 
   // Save description
   saveDescriptionBtn.addEventListener('click', () => {
     const desc = descriptionInput.value;
-    descriptionEl.textContent = desc;
     db.ref('description').set(desc);
     descriptionInput.value = '';
   });
@@ -158,7 +166,7 @@
     killSequence = 0;
   });
 
-  // Kill puzzle sequence
+  // Kill puzzle
   kill0.addEventListener('click', () => {
     killSequence = 1;
     alert("Step 1 complete! Click the 'O' in ERROR.");
