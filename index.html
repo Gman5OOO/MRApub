@@ -22,7 +22,8 @@
   --danger: #ff6b6b;
   --glass: rgba(255,255,255,0.04);
   --radius: 14px;
-  --max-width: 880px;
+  --max-width: 1200px; /* increased for desktop breathing room */
+  --right-col-max: 360px;
   --shadow: 0 10px 30px rgba(2,6,23,0.6);
 }
 
@@ -47,12 +48,13 @@ body {
 .container {
   width:100%;
   max-width: var(--max-width);
+  width: min(96%, var(--max-width));
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
   border-radius: var(--radius);
-  padding: clamp(18px, 3vw, 32px);
+  padding: clamp(18px, 3vw, 36px);
   box-shadow: var(--shadow);
   display: grid;
-  grid-template-columns: 1fr 360px;
+  grid-template-columns: 1fr minmax(260px, var(--right-col-max));
   gap: 28px;
   align-items: center;
   position: relative;
@@ -68,6 +70,7 @@ body {
   display:flex;
   align-items:center;
   gap:14px;
+  justify-content:space-between;
 }
 .brand {
   background: linear-gradient(135deg,var(--accent),var(--accent-2));
@@ -80,7 +83,7 @@ body {
 }
 h1 {
   margin: 0;
-  font-size: clamp(18px, 2.4vw, 20px);
+  font-size: clamp(20px, 2.6vw, 26px);
   font-weight: 800;
   color: white;
 }
@@ -88,6 +91,19 @@ h1 {
   margin-top:6px;
   color: var(--muted);
   font-size: 13px;
+}
+
+/* Login button moved to top-left: subtle and accessible */
+#loginBtn {
+  background: transparent;
+  color: var(--accent-2);
+  border: 1px solid rgba(255,255,255,0.04);
+  padding:6px 10px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:13px;
+  align-self:flex-start;
 }
 
 /* Counter */
@@ -100,18 +116,19 @@ h1 {
 }
 
 #count {
-  font-size: clamp(36px, 6vw, 88px);
+  font-size: clamp(36px, calc(3.5vw + 6px), 88px);
   font-weight: 900;
   letter-spacing: 6px;
   color: white;
   background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  padding: clamp(14px,2.2vw,22px) clamp(18px,3vw,28px);
+  padding: clamp(12px,2.2vw,22px) clamp(14px,3vw,28px);
   border-radius: 12px;
   min-width: 160px;
   text-align:center;
   box-shadow: 0 6px 30px rgba(2,6,23,0.45) inset;
 }
 
+/* smaller description area */
 .desc-wrap {
   flex: 1 1 260px;
   min-width: 160px;
@@ -128,6 +145,7 @@ h1 {
   outline: none;
   min-height:46px;
   line-height:1.3;
+  white-space:pre-wrap;
 }
 
 /* Right: controls */
@@ -139,23 +157,7 @@ h1 {
   justify-content:center;
 }
 
-.top-row {
-  display:flex;
-  gap:10px;
-  align-items:center;
-  justify-content:flex-end;
-}
-#loginBtn {
-  background: transparent;
-  color: var(--accent-2);
-  border: 1px solid rgba(255,255,255,0.04);
-  padding:8px 12px;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:600;
-}
-
-/* Admin panel */
+/* Admin panel hidden by default */
 .admin-card {
   background: rgba(255,255,255,0.02);
   padding:12px;
@@ -202,7 +204,7 @@ button:disabled { opacity: .5; cursor:not-allowed; transform:none }
     inset: 0;
     background: #fafafa;
     color: #222;
-    z-index: 9999;
+    z-index: 9995;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -242,12 +244,13 @@ button:disabled { opacity: .5; cursor:not-allowed; transform:none }
   display: none;
   align-items:center;
   justify-content:center;
-  z-index: 12000;
+  z-index: 13000; /* above kill screen and UI */
   padding: 18px;
+  -webkit-overflow-scrolling: touch;
 }
 .auth-modal {
   width: 100%;
-  max-width: 420px;
+  max-width: 460px;
   background: linear-gradient(180deg, #0b1220, #071025);
   border-radius: 12px;
   padding: 18px;
@@ -264,8 +267,9 @@ button:disabled { opacity: .5; cursor:not-allowed; transform:none }
   margin-top:12px;
   align-items:center;
 }
-.auth-row input[type="password"],
-.auth-row input[type="text"] {
+.auth-row input[type="tel"],
+.auth-row input[type="text"],
+.auth-row input[type="password"] {
   flex:1;
   padding:10px 12px;
   border-radius:8px;
@@ -287,7 +291,6 @@ button:disabled { opacity: .5; cursor:not-allowed; transform:none }
   .right { order: 2; }
   .left { order: 1; }
   .title-wrap { justify-content:space-between }
-  .top-row { justify-content:flex-start }
   .brand { display:none }
   #count { width:100%; }
 }
@@ -295,6 +298,11 @@ button:disabled { opacity: .5; cursor:not-allowed; transform:none }
   body{padding:12px;}
   .auth-modal{padding:12px}
   .auth-row input{font-size:14px}
+}
+
+/* visual masking for WebKit when input is type=tel (best-effort) */
+.password-mask {
+  -webkit-text-security: disc; /* WebKit-only */
 }
 </style>
 </head>
@@ -304,10 +312,17 @@ button:disabled { opacity: .5; cursor:not-allowed; transform:none }
 <div class="container" role="main" aria-labelledby="pageTitle">
   <div class="left">
     <div class="title-wrap">
-      <div class="brand" aria-hidden="true">Flirt</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="brand" aria-hidden="true">Flirt</div>
+        <div>
+          <h1 id="pageTitle">Mr. Arrington — Flirt Count</h1>
+          <div class="subtitle">A lightweight public counter — updated in real time</div>
+        </div>
+      </div>
+
+      <!-- Login button moved to top-left visual area (subtle) -->
       <div>
-        <h1 id="pageTitle">Mr. Arrington — Flirt Count</h1>
-        <div class="subtitle">A lightweight public counter — updated in real time</div>
+        <button id="loginBtn" aria-haspopup="dialog" aria-controls="authModal" title="Admin login">Log in</button>
       </div>
     </div>
 
@@ -322,10 +337,7 @@ button:disabled { opacity: .5; cursor:not-allowed; transform:none }
   </div>
 
   <div class="right">
-    <div class="top-row" aria-hidden="false">
-      <button id="loginBtn" aria-haspopup="dialog" aria-controls="authModal">Log in</button>
-    </div>
-
+    <!-- Admin controls hidden by default -->
     <div id="adminPanel" class="admin-card" aria-hidden="true">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="font-weight:700">Admin Controls</div>
@@ -374,13 +386,14 @@ button:disabled { opacity: .5; cursor:not-allowed; transform:none }
     <div id="authMessage" style="color:var(--muted);font-size:13px">Please enter your password below.</div>
 
     <div class="auth-row" style="margin-top:12px;">
-      <input id="authInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Enter password" aria-label="password input">
+      <!-- Use type="tel" for reliable numeric keyboard on mobile; add best-effort masking for WebKit -->
+      <input id="authInput" class="password-mask" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" placeholder="Enter password" aria-label="password input">
       <button id="authToggle" title="Show/Hide" aria-label="toggle password visibility">Show</button>
     </div>
 
     <div class="auth-actions">
       <button id="authCancel">Cancel</button>
-      <button id="authSubmit" class="primary">Submit</button>
+      <button id="authSubmit" class="primary">Sign in</button>
     </div>
   </div>
 </div>
@@ -465,6 +478,7 @@ counterDoc.onSnapshot((doc) => {
     try {
         if(!doc.exists) return;
         const data = doc.data() || {};
+        console.log("snapshot data:", data);
         const v = (typeof data.value === 'number') ? data.value : 0;
         countEl.innerText = v.toString().padStart(4, "0");
 
@@ -493,12 +507,15 @@ function showAuthModal(purpose = 'login') {
     authOverlay.style.display = 'flex';
     authOverlay.setAttribute('aria-hidden', 'false');
     authInput.value = '';
-    authInput.type = 'password';
+    // default to masked best-effort via CSS; show button toggle indicates current state
+    authInput.type = 'tel';
     authToggle.innerText = 'Show';
+    authInput.classList.add('password-mask');
     authInput.focus();
     authMessage.innerText = (purpose === 'login') ? 'Please enter your admin password.' : 'Enter restore code to bring the site back online.';
-    // update submit text for clarity
     authSubmit.innerText = (purpose === 'login') ? 'Sign in' : 'Restore';
+    // On mobile, give a little time for the keyboard to appear reliably
+    setTimeout(()=>{ authInput.focus(); }, 50);
 }
 
 function hideAuthModal() {
@@ -507,13 +524,14 @@ function hideAuthModal() {
     authPurpose = null;
 }
 
-/* Toggle password visibility */
+/* Toggle password visibility (for numeric tel input we toggle text-security class and value type if needed) */
 authToggle.onclick = () => {
-    if (authInput.type === 'password') {
-        authInput.type = 'text';
+    // If currently masked (we're using password-mask class), unmask by removing class and change label
+    if (authInput.classList.contains('password-mask')) {
+        authInput.classList.remove('password-mask');
         authToggle.innerText = 'Hide';
     } else {
-        authInput.type = 'password';
+        authInput.classList.add('password-mask');
         authToggle.innerText = 'Show';
     }
 };
@@ -543,6 +561,8 @@ authSubmit.onclick = async () => {
             loginBtn.style.opacity = '0.6';
             loginBtn.style.pointerEvents = 'none';
             adminPanel.setAttribute('aria-hidden', 'false');
+            // hide the login button visually for clarity (admin controls are shown)
+            loginBtn.style.display = 'none';
         } else if(authPurpose === 'restore') {
             try {
                 await counterDoc.set({ isKilled: false }, { merge: true });
@@ -584,14 +604,19 @@ document.addEventListener('click', async (ev) => {
     }
 });
 
-/* Admin actions (same logic as before) */
+/* Admin actions */
 incBtn.onclick = async () => {
     try {
         await counterDoc.update({
             value: firebase.firestore.FieldValue.increment(1)
         });
     } catch (e) {
-        await counterDoc.set({ value: 1 }, { merge: true });
+        // If update fails (doc missing), set to 1
+        try {
+            await counterDoc.set({ value: 1 }, { merge: true });
+        } catch (err) {
+            console.error("inc failed", err);
+        }
     }
 };
 
@@ -599,7 +624,11 @@ resetBtn.onclick = async () => {
     try {
         await counterDoc.update({ value: 0 });
     } catch (e) {
-        await counterDoc.set({ value: 0 }, { merge: true });
+        try {
+            await counterDoc.set({ value: 0 }, { merge: true });
+        } catch (err) {
+            console.error("reset failed", err);
+        }
     }
 };
 
