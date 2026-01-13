@@ -19,22 +19,9 @@
     text-align: center;
     padding: 20px;
   }
-  h1 {
-    font-size: 2em;
-    font-weight: 700;
-    margin: 20px 0;
-  }
-  #counter {
-    font-size: 5em;
-    font-weight: 700;
-    margin: 20px 0;
-    letter-spacing: 5px;
-  }
-  #description {
-    font-size: 1.1em;
-    margin: 10px 0 40px 0;
-    color: #ddd;
-  }
+  h1 { font-size: 2em; font-weight: 700; margin: 20px 0; }
+  #counter { font-size: 5em; font-weight: 700; margin: 20px 0; letter-spacing: 5px; }
+  #description { font-size: 1.1em; margin: 10px 0 40px 0; color: #ddd; }
   button {
     padding: 10px 20px;
     font-size: 1em;
@@ -51,14 +38,14 @@
   #reset-btn { background: #f44336; color: white; }
   #kill-switch-btn { background: #ff9800; color: white; }
   #kill-overlay {
-    display: none;
+    display: none; /* Start hidden */
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #000; color: #fff; z-index: 1000;
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     font-size: 3em;
     user-select: none;
   }
-  #kill-overlay span { cursor: pointer; user-select: none; }
+  #kill-overlay span { cursor: pointer; user-select: none; margin: 0 5px; }
   input[type="text"] {
     padding: 10px; font-size: 1em; border-radius: 6px; border: none;
     margin-top: 20px; text-align: center;
@@ -86,8 +73,8 @@
 </div>
 
 <div id="kill-overlay">
-  <span id="kill-404">404</span>
-  <span id="kill-error"> Error</span>
+  <span id="kill-404-0">4</span><span id="kill-404-1">0</span><span id="kill-404-2">4</span>
+  <span id="kill-error">ERROR</span>
 </div>
 
 <!-- Firebase -->
@@ -120,7 +107,8 @@
   const descriptionInput = document.getElementById('description-input');
   const saveDescriptionBtn = document.getElementById('save-description-btn');
   const killOverlay = document.getElementById('kill-overlay');
-  const kill404 = document.getElementById('kill-404');
+  const kill404_1 = document.getElementById('kill-404-0'); // first 4
+  const kill404_0 = document.getElementById('kill-404-1'); // 0 (the one we need)
   const killError = document.getElementById('kill-error');
 
   // 🔹 Load counter & description from Firebase
@@ -161,25 +149,35 @@
   });
 
   // 🔹 Kill Switch
+  let killSequence = 0; // 0 = not started
   killSwitchBtn.addEventListener('click', () => {
-    killOverlay.style.display = "flex";
+    killOverlay.style.display = "flex"; // show overlay only when Kill Switch clicked
+    killSequence = 0; // reset puzzle sequence
   });
 
-  // 🔹 Kill Switch Unlock (click "0" then admin password)
-  let killUnlocked = false;
-  kill404.addEventListener('click', () => {
-    const pw = prompt("Enter admin password to disable 404:");
-    if (pw === "0115") {
-      killOverlay.style.display = "none";
-      killUnlocked = true;
+  // 🔹 Kill Switch Puzzle
+  // Step 1: click "0" in 404
+  kill404_0.addEventListener('click', () => {
+    killSequence = 1;
+    alert("Step 1 complete! Now click the 'O' in ERROR.");
+  });
+
+  // Step 2: click "O" in ERROR
+  killError.addEventListener('click', () => {
+    if(killSequence === 1) {
+      const pw = prompt("Enter admin password to disable 404:");
+      if (pw === "0115") {
+        killOverlay.style.display = "none";
+        alert("Site restored!");
+        killSequence = 0;
+      } else {
+        alert("Wrong password!");
+        killSequence = 0;
+      }
     } else {
-      alert("Wrong password!");
+      alert("Click the '0' in 404 first!");
     }
   });
-  killError.addEventListener('click', () => {
-    if (!killUnlocked) alert("Click the '0' first!");
-  });
-
 </script>
 </body>
 </html>
