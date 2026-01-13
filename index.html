@@ -35,14 +35,14 @@
   #reset-btn { background: #f44336; color: white; }
   #kill-switch-btn { background: #ff9800; color: white; }
   #kill-overlay {
-    display: none; /* hidden by default */
+    display: none;
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #000; color: #fff; z-index: 1000;
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     font-size: 3em;
     user-select: none;
   }
-  #kill-overlay span { cursor: pointer; margin: 0 5px; }
+  #kill-overlay div span { cursor: pointer; margin: 0 5px; }
   input[type="text"] {
     padding: 10px; font-size: 1em; border-radius: 6px; border: none;
     margin-top: 20px; text-align: center;
@@ -114,7 +114,7 @@
   const kill0 = document.getElementById('kill-0');
   const killO = document.getElementById('kill-O');
 
-  // Load data from Firebase
+  // Load counter and description from Firebase
   db.ref('flirtCount').get().then(snap => {
     if(snap.exists()) counterEl.textContent = snap.val().toString().padStart(4,'0');
   });
@@ -129,7 +129,7 @@
     else alert("Incorrect password");
   });
 
-  // Increment
+  // Increment counter
   incrementBtn.addEventListener('click', () => {
     let count = parseInt(counterEl.textContent);
     count++;
@@ -137,7 +137,7 @@
     db.ref('flirtCount').set(count);
   });
 
-  // Reset
+  // Reset counter
   resetBtn.addEventListener('click', () => {
     counterEl.textContent = '0000';
     db.ref('flirtCount').set(0);
@@ -155,13 +155,13 @@
   let killSequence = 0;
   killSwitchBtn.addEventListener('click', () => {
     killOverlay.style.display = "flex";
-    killSequence = 0; // reset
+    killSequence = 0;
   });
 
-  // Kill switch puzzle
+  // Kill puzzle sequence
   kill0.addEventListener('click', () => {
     killSequence = 1;
-    alert("Step 1 complete: now click the 'O' in ERROR");
+    alert("Step 1 complete! Click the 'O' in ERROR.");
   });
 
   killO.addEventListener('click', () => {
