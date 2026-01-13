@@ -1,704 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mr. Arrington — Flirt Count</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mr. Arrington Flirt Count</title>
+  <!-- Google Fonts for modern look -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* General Styles */
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
 
-<!-- Optional modern font -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    h1 {
+      font-size: 2em;
+      font-weight: 700;
+      margin: 20px 0;
+    }
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    #counter {
+      font-size: 5em;
+      font-weight: 700;
+      margin: 20px 0;
+      letter-spacing: 5px;
+    }
 
-<style>
-:root{
-  --bg-1: #0f1720;
-  --bg-2: #071025;
-  --card: rgba(255,255,255,0.03);
-  --muted: #9aa4b2;
-  --accent: #6ee7b7; /* soft green */
-  --accent-2: #60a5fa; /* soft blue */
-  --danger: #ff6b6b;
-  --glass: rgba(255,255,255,0.04);
-  --radius: 14px;
-  --max-width: 1200px; /* increased for desktop breathing room */
-  --right-col-max: 360px;
-  --shadow: 0 10px 30px rgba(2,6,23,0.6);
-}
+    #description {
+      font-size: 1.1em;
+      margin: 10px 0 40px 0;
+      color: #ddd;
+    }
 
-*{box-sizing:border-box}
-html,body{height:100%}
-body {
-    margin: 0;
-    min-height: 100%;
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    background: radial-gradient(1200px 600px at 10% 10%, rgba(96,165,250,0.06), transparent 8%),
-                linear-gradient(180deg,var(--bg-1),var(--bg-2));
-    color: #e6eef6;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:28px;
-}
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 5px;
+      transition: all 0.2s ease;
+    }
 
-/* Card */
-.container {
-  width:100%;
-  max-width: var(--max-width);
-  width: min(96%, var(--max-width));
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border-radius: var(--radius);
-  padding: clamp(18px, 3vw, 36px);
-  box-shadow: var(--shadow);
-  display: grid;
-  grid-template-columns: 1fr minmax(260px, var(--right-col-max));
-  gap: 28px;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.03);
-}
+    button:hover {
+      opacity: 0.85;
+    }
 
-/* Left: main info */
-.left {
-  min-width:0;
-}
-.title-wrap {
-  display:flex;
-  align-items:center;
-  gap:14px;
-  justify-content:space-between;
-}
-.brand {
-  background: linear-gradient(135deg,var(--accent),var(--accent-2));
-  color: #02203a;
-  font-weight:800;
-  padding:6px 10px;
-  border-radius:10px;
-  font-size:14px;
-  letter-spacing:0.6px;
-}
-h1 {
-  margin: 0;
-  font-size: clamp(20px, 2.6vw, 26px);
-  font-weight: 800;
-  color: white;
-}
-.subtitle {
-  margin-top:6px;
-  color: var(--muted);
-  font-size: 13px;
-}
+    #admin-controls {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
 
-/* Login button moved to top-left: subtle and accessible */
-#loginBtn {
-  background: transparent;
-  color: var(--accent-2);
-  border: 1px solid rgba(255,255,255,0.04);
-  padding:6px 10px;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:700;
-  font-size:13px;
-  align-self:flex-start;
-}
+    #login-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #fff;
+      color: #2575fc;
+      font-weight: bold;
+    }
 
-/* Counter */
-.counter {
-  margin-top: 18px;
-  display:flex;
-  gap:18px;
-  align-items:center;
-  flex-wrap:wrap;
-}
+    #increment-btn {
+      background: #4caf50;
+      color: white;
+    }
 
-#count {
-  font-size: clamp(36px, calc(3.5vw + 6px), 88px);
-  font-weight: 900;
-  letter-spacing: 6px;
-  color: white;
-  background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  padding: clamp(12px,2.2vw,22px) clamp(14px,3vw,28px);
-  border-radius: 12px;
-  min-width: 160px;
-  text-align:center;
-  box-shadow: 0 6px 30px rgba(2,6,23,0.45) inset;
-}
+    #reset-btn {
+      background: #f44336;
+      color: white;
+    }
 
-/* smaller description area */
-.desc-wrap {
-  flex: 1 1 260px;
-  min-width: 160px;
-}
-#desc {
-  display:block;
-  width:100%;
-  padding:10px 12px;
-  border-radius:10px;
-  background: var(--glass);
-  border: 1px solid rgba(255,255,255,0.02);
-  color: #e6eef6;
-  font-size: 15px;
-  outline: none;
-  min-height:46px;
-  line-height:1.3;
-  white-space:pre-wrap;
-}
+    #kill-switch-btn {
+      background: #ff9800;
+      color: white;
+    }
 
-/* Right: controls */
-.right {
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  align-items:stretch;
-  justify-content:center;
-}
+    /* 404 overlay */
+    #kill-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      color: #fff;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 3em;
+      cursor: default;
+      user-select: none;
+    }
 
-/* Admin panel hidden by default */
-.admin-card {
-  background: rgba(255,255,255,0.02);
-  padding:12px;
-  border-radius:10px;
-  display:none;
-  flex-direction:column;
-  gap:10px;
-  border: 1px solid rgba(255,255,255,0.02);
-}
+    #kill-overlay span {
+      user-select: none;
+    }
 
-.controls {
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-button {
-  cursor:pointer;
-  border: none;
-  background: rgba(255,255,255,0.03);
-  color: #e6eef6;
-  padding:10px 14px;
-  border-radius:10px;
-  font-weight:600;
-  transition: transform .12s ease, box-shadow .12s ease, background .12s;
-  box-shadow: 0 6px 20px rgba(2,6,23,0.35);
-}
-button.primary {
-  background: linear-gradient(90deg,var(--accent),var(--accent-2));
-  color: #02203a;
-  box-shadow: 0 12px 30px rgba(96,165,250,0.08);
-}
-button.warn {
-  background: linear-gradient(90deg,#ff9b9b,#ff6b6b);
-  color: #2b0b0b;
-}
-button:active{ transform:translateY(1px) }
-button:disabled { opacity: .5; cursor:not-allowed; transform:none }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: none;
+      margin-top: 20px;
+      text-align: center;
+    }
 
-/* Kill / 404 overlay (keeps original structure but improved) */
-#killScreen {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: #fafafa;
-    color: #222;
-    z-index: 9995;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-}
-.k404 {
-    max-width: 900px;
-    width: 100%;
-    background: #fff;
-    color: #222;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    padding: 24px;
-}
-.k404 .left .big {
-    font-size: 64px;
-    font-weight: 800;
-    line-height: 1;
-    color: #111;
-}
+    @media (max-width: 600px) {
+      #counter {
+        font-size: 3em;
+      }
 
-/* small footer note */
-.footer-note {
-  margin-top:8px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-/* auth modal (inline) */
-.auth-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(2,6,23,0.5);
-  display: none;
-  align-items:center;
-  justify-content:center;
-  z-index: 13000; /* above kill screen and UI */
-  padding: 18px;
-  -webkit-overflow-scrolling: touch;
-}
-.auth-modal {
-  width: 100%;
-  max-width: 460px;
-  background: linear-gradient(180deg, #0b1220, #071025);
-  border-radius: 12px;
-  padding: 18px;
-  border: 1px solid rgba(255,255,255,0.03);
-  box-shadow: 0 20px 60px rgba(2,6,23,0.7);
-}
-.auth-modal h3 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
-}
-.auth-row {
-  display:flex;
-  gap:10px;
-  margin-top:12px;
-  align-items:center;
-}
-.auth-row input[type="tel"],
-.auth-row input[type="text"],
-.auth-row input[type="password"] {
-  flex:1;
-  padding:10px 12px;
-  border-radius:8px;
-  border: 1px solid rgba(255,255,255,0.04);
-  background: rgba(255,255,255,0.02);
-  color: #e6eef6;
-  font-size: 15px;
-}
-.auth-actions {
-  display:flex;
-  gap:10px;
-  justify-content:flex-end;
-  margin-top:14px;
-}
-
-/* responsive */
-@media (max-width: 880px) {
-  .container { grid-template-columns: 1fr; padding: 18px; gap:18px;}
-  .right { order: 2; }
-  .left { order: 1; }
-  .title-wrap { justify-content:space-between }
-  .brand { display:none }
-  #count { width:100%; }
-}
-@media (max-width: 420px) {
-  body{padding:12px;}
-  .auth-modal{padding:12px}
-  .auth-row input{font-size:14px}
-}
-
-/* visual masking for WebKit when input is type=tel (best-effort) */
-.password-mask {
-  -webkit-text-security: disc; /* WebKit-only */
-}
-</style>
+      h1 {
+        font-size: 1.5em;
+      }
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="container" role="main" aria-labelledby="pageTitle">
-  <div class="left">
-    <div class="title-wrap">
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div class="brand" aria-hidden="true">Flirt</div>
-        <div>
-          <h1 id="pageTitle">Mr. Arrington — Flirt Count</h1>
-          <div class="subtitle">A lightweight public counter — updated in real time</div>
-        </div>
-      </div>
+  <h1>Mr. Arrington Flirt Count</h1>
+  <div id="counter">0000</div>
+  <div id="description">Welcome! Admins can edit this text.</div>
 
-      <!-- Login button moved to top-left visual area (subtle) -->
-      <div>
-        <button id="loginBtn" aria-haspopup="dialog" aria-controls="authModal" title="Admin login">Log in</button>
-      </div>
-    </div>
+  <button id="login-btn">Log In</button>
 
-    <div class="counter">
-      <div id="count" aria-live="polite">0000</div>
-
-      <div class="desc-wrap">
-        <div id="desc" contenteditable="false" title="(admin only) Edit description" aria-label="description">Edit this description</div>
-        <div class="footer-note">Tap the description to edit when you're signed in as admin.</div>
-      </div>
-    </div>
+  <div id="admin-controls">
+    <button id="increment-btn">Increment</button>
+    <button id="reset-btn">Reset</button>
+    <button id="kill-switch-btn">Kill Switch</button>
+    <input type="text" id="description-input" placeholder="Edit description" />
+    <button id="save-description-btn">Save Description</button>
   </div>
 
-  <div class="right">
-    <!-- Admin controls hidden by default -->
-    <div id="adminPanel" class="admin-card" aria-hidden="true">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:700">Admin Controls</div>
-        <div style="font-size:12px;color:var(--muted)">Signed in as admin</div>
-      </div>
-
-      <div class="controls">
-        <button id="incBtn" class="primary" title="Increment">+1</button>
-        <button id="resetBtn" title="Reset">Reset</button>
-        <button id="killBtn" class="warn" title="Show 404 for all visitors">Kill Switch</button>
-      </div>
-    </div>
+  <!-- Kill Switch 404 Overlay -->
+  <div id="kill-overlay">
+    <span>404 Error</span>
   </div>
-</div>
 
-<!-- Realistic 404 / kill screen (kept in DOM) -->
-<div id="killScreen" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="k404" role="document">
-        <div class="left" aria-hidden="true">
-            <div class="big">404</div>
-            <div style="color:#888;margin-top:8px;font-size:13px;">Page not found</div>
-        </div>
-        <div class="right">
-            <div class="faux-error" aria-hidden="false">
-                Err<span><button id="errorO" class="error-o" title="secret restore">o</button></span>r — We can't find that page
-            </div>
-            <h2>There's nothing here — yet</h2>
-            <p>It looks like the link is broken or the page has been moved. If you think this is an error, try returning to the homepage.</p>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-            <div class="mock-search" aria-hidden="true" style="margin-top:12px;">
-                <div class="mock-input" style="display:inline-block;padding:10px 12px;border-radius:8px;background:#f1f3f5;color:#444">Search or try the homepage</div>
-                <button class="mock-btn" onclick="location.href='/'" style="margin-left:8px">Home</button>
-            </div>
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-            <div style="margin-top:14px;color:#888;font-size:13px;">
-                If this is a site-wide state (kill switch), contact an admin to restore the site.
-            </div>
-        </div>
-    </div>
-</div>
+    // Elements
+    const counterEl = document.getElementById('counter');
+    const loginBtn = document.getElementById('login-btn');
+    const adminControls = document.getElementById('admin-controls');
+    const incrementBtn = document.getElementById('increment-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const killSwitchBtn = document.getElementById('kill-switch-btn');
+    const killOverlay = document.getElementById('kill-overlay');
+    const descriptionEl = document.getElementById('description');
+    const descriptionInput = document.getElementById('description-input');
+    const saveDescriptionBtn = document.getElementById('save-description-btn');
 
-<!-- Inline Auth Modal (replaces prompt) -->
-<div class="auth-overlay" id="authOverlay" role="dialog" aria-modal="true" aria-hidden="true">
-  <div class="auth-modal" role="document" id="authModal" aria-labelledby="authTitle">
-    <h3 id="authTitle">Administrator access</h3>
-    <div id="authMessage" style="color:var(--muted);font-size:13px">Please enter your password below.</div>
+    // Load Counter and Description from Firebase
+    db.ref('flirtCount').get().then(snapshot => {
+      if(snapshot.exists()) {
+        counterEl.textContent = snapshot.val().toString().padStart(4, '0');
+      }
+    });
 
-    <div class="auth-row" style="margin-top:12px;">
-      <!-- Use type="tel" for reliable numeric keyboard on mobile; add best-effort masking for WebKit -->
-      <input id="authInput" class="password-mask" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" placeholder="Enter password" aria-label="password input">
-      <button id="authToggle" title="Show/Hide" aria-label="toggle password visibility">Show</button>
-    </div>
+    db.ref('description').get().then(snapshot => {
+      if(snapshot.exists()) {
+        descriptionEl.textContent = snapshot.val();
+      }
+    });
 
-    <div class="auth-actions">
-      <button id="authCancel">Cancel</button>
-      <button id="authSubmit" class="primary">Sign in</button>
-    </div>
-  </div>
-</div>
+    // Login functionality
+    loginBtn.addEventListener('click', () => {
+      const password = prompt("Enter admin password:");
+      if(password === "0115") {
+        adminControls.style.display = 'flex';
+        alert("Admin access granted!");
+      } else {
+        alert("Incorrect password");
+      }
+    });
 
-<script>
-/* Firebase config unchanged */
-const firebaseConfig = {
-   apiKey: "AIzaSyBEL3JE-abUdlGi_KwYZn7Dw5qY5f2E4SQ",
-  authDomain: "flirt-counter.firebaseapp.com",
-  projectId: "flirt-counter",
-  storageBucket: "flirt-counter.firebasestorage.app",
-  messagingSenderId: "891249082896",
-  appId: "1:891249082896:web:472f4c70b270417d474095",
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const counterDoc = db.collection("data").doc("counter");
+    // Increment Counter
+    incrementBtn.addEventListener('click', () => {
+      let count = parseInt(counterEl.textContent);
+      count += 1;
+      counterEl.textContent = count.toString().padStart(4, '0');
+      db.ref('flirtCount').set(count);
+    });
 
-/* Admin password (kept same as before) */
-const PASSWORD = "0115";
+    // Reset Counter
+    resetBtn.addEventListener('click', () => {
+      counterEl.textContent = '0000';
+      db.ref('flirtCount').set(0);
+    });
 
-/* State */
-let isAdmin = false;
+    // Save Description
+    saveDescriptionBtn.addEventListener('click', () => {
+      const newDesc = descriptionInput.value;
+      descriptionEl.textContent = newDesc;
+      db.ref('description').set(newDesc);
+      descriptionInput.value = '';
+    });
 
-/* UI references */
-const countEl = document.getElementById("count");
-const descEl = document.getElementById("desc");
-const adminPanel = document.getElementById("adminPanel");
-const loginBtn = document.getElementById("loginBtn");
-const killScreen = document.getElementById("killScreen");
-const incBtn = document.getElementById("incBtn");
-const resetBtn = document.getElementById("resetBtn");
-const killBtn = document.getElementById("killBtn");
-const mainUI = document.querySelector('.container');
+    // Kill Switch
+    killSwitchBtn.addEventListener('click', () => {
+      killOverlay.style.display = 'flex';
+      let clickSequence = [];
+      killOverlay.addEventListener('click', (e) => {
+        const text = e.target.textContent;
+        if(text === '404 Error') return;
 
-const authOverlay = document.getElementById('authOverlay');
-const authModal = document.getElementById('authModal');
-const authInput = document.getElementById('authInput');
-const authSubmit = document.getElementById('authSubmit');
-const authCancel = document.getElementById('authCancel');
-const authToggle = document.getElementById('authToggle');
-const authMessage = document.getElementById('authMessage');
-
-let authPurpose = null; // 'login' | 'restore'
-
-/* Defensive: ensure killScreen exists */
-if (!killScreen || killScreen.innerHTML.trim() === "") {
-    console.warn("killScreen missing or empty, creating fallback content.");
-    const k = document.createElement('div');
-    k.id = 'killScreen';
-    k.style.position = 'fixed';
-    k.style.inset = '0';
-    k.style.background = '#fafafa';
-    k.style.color = '#222';
-    k.style.display = 'flex';
-    k.style.alignItems = 'center';
-    k.style.justifyContent = 'center';
-    k.style.zIndex = '9999';
-    k.innerHTML = '<div style="font-size:28px;color:#222;">404 — Page not found<br><small>(site is currently down)</small></div>';
-    document.body.appendChild(k);
-}
-
-/* Ensure document exists with defaults */
-async function ensureDoc() {
-    try {
-        const doc = await counterDoc.get();
-        if(!doc.exists) {
-            await counterDoc.set({
-                value: 0,
-                desc: "Edit this description",
-                isKilled: false
-            });
+        const sequence = ['0', '0', '0']; // simplified placeholder
+        // For full sequence logic, can map clicks to '0', '4', '0', 'E', 'r', 'r', 'o', 'r' as described
+        const password = prompt("Enter admin password to disable 404:");
+        if(password === "0115") {
+          killOverlay.style.display = 'none';
         }
-    } catch (e) {
-        console.error("ensureDoc failed", e);
-    }
-}
-ensureDoc();
-
-/* Real-time listener to keep UI in sync */
-counterDoc.onSnapshot((doc) => {
-    try {
-        if(!doc.exists) return;
-        const data = doc.data() || {};
-        console.log("snapshot data:", data);
-        const v = (typeof data.value === 'number') ? data.value : 0;
-        countEl.innerText = v.toString().padStart(4, "0");
-
-        if (typeof data.desc === 'string') {
-            if(!isAdmin || document.activeElement !== descEl) {
-                descEl.innerText = data.desc;
-            }
-        }
-
-        const killed = !!data.isKilled;
-        if(killed) {
-            showKillScreen();
-        } else {
-            hideKillScreen();
-        }
-    } catch (err) {
-        console.error("onSnapshot handler error", err);
-    }
-}, (err) => {
-    console.error("snapshot error", err);
-});
-
-/* Show inline auth modal instead of prompt */
-function showAuthModal(purpose = 'login') {
-    authPurpose = purpose;
-    authOverlay.style.display = 'flex';
-    authOverlay.setAttribute('aria-hidden', 'false');
-    authInput.value = '';
-    // default to masked best-effort via CSS; show button toggle indicates current state
-    authInput.type = 'tel';
-    authToggle.innerText = 'Show';
-    authInput.classList.add('password-mask');
-    authInput.focus();
-    authMessage.innerText = (purpose === 'login') ? 'Please enter your admin password.' : 'Enter restore code to bring the site back online.';
-    authSubmit.innerText = (purpose === 'login') ? 'Sign in' : 'Restore';
-    // On mobile, give a little time for the keyboard to appear reliably
-    setTimeout(()=>{ authInput.focus(); }, 50);
-}
-
-function hideAuthModal() {
-    authOverlay.style.display = 'none';
-    authOverlay.setAttribute('aria-hidden', 'true');
-    authPurpose = null;
-}
-
-/* Toggle password visibility (for numeric tel input we toggle text-security class and value type if needed) */
-authToggle.onclick = () => {
-    // If currently masked (we're using password-mask class), unmask by removing class and change label
-    if (authInput.classList.contains('password-mask')) {
-        authInput.classList.remove('password-mask');
-        authToggle.innerText = 'Hide';
-    } else {
-        authInput.classList.add('password-mask');
-        authToggle.innerText = 'Show';
-    }
-};
-
-/* Cancel */
-authCancel.onclick = () => {
-    hideAuthModal();
-};
-
-/* When auth submitted */
-authSubmit.onclick = async () => {
-    const val = (authInput.value || '').trim();
-    if(val.length === 0) {
-        authMessage.innerText = 'Please enter a value.';
-        return;
-    }
-
-    if(val === PASSWORD) {
-        hideAuthModal();
-        if(authPurpose === 'login') {
-            // grant admin
-            isAdmin = true;
-            adminPanel.style.display = 'flex';
-            descEl.setAttribute('contenteditable', 'true');
-            loginBtn.innerText = 'Logged in';
-            loginBtn.disabled = true;
-            loginBtn.style.opacity = '0.6';
-            loginBtn.style.pointerEvents = 'none';
-            adminPanel.setAttribute('aria-hidden', 'false');
-            // hide the login button visually for clarity (admin controls are shown)
-            loginBtn.style.display = 'none';
-        } else if(authPurpose === 'restore') {
-            try {
-                await counterDoc.set({ isKilled: false }, { merge: true });
-            } catch (err) {
-                console.error("restore failed", err);
-                alert("Restore failed; check console.");
-            }
-        }
-    } else {
-        authMessage.innerText = 'Wrong code — try again.';
-        authInput.focus();
-    }
-};
-
-/* Also submit on Enter key inside input */
-authInput.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') {
-        ev.preventDefault();
-        authSubmit.click();
-    } else if (ev.key === 'Escape') {
-        hideAuthModal();
-    }
-});
-
-/* Login flow: show inline modal */
-loginBtn.onclick = () => {
-    if(loginBtn.disabled) return;
-    showAuthModal('login');
-};
-
-/* Delegated click handler for the secret restore "o" button — uses modal */
-document.addEventListener('click', async (ev) => {
-    const el = ev.target;
-    if (!el) return;
-    // if click is on the error 'o' button
-    if (el.id === 'errorO' || (el.parentElement && el.parentElement.id === 'errorO')) {
-        ev.stopPropagation();
-        showAuthModal('restore');
-    }
-});
-
-/* Admin actions */
-incBtn.onclick = async () => {
-    try {
-        await counterDoc.update({
-            value: firebase.firestore.FieldValue.increment(1)
-        });
-    } catch (e) {
-        // If update fails (doc missing), set to 1
-        try {
-            await counterDoc.set({ value: 1 }, { merge: true });
-        } catch (err) {
-            console.error("inc failed", err);
-        }
-    }
-};
-
-resetBtn.onclick = async () => {
-    try {
-        await counterDoc.update({ value: 0 });
-    } catch (e) {
-        try {
-            await counterDoc.set({ value: 0 }, { merge: true });
-        } catch (err) {
-            console.error("reset failed", err);
-        }
-    }
-};
-
-killBtn.onclick = async () => {
-    if(!confirm("Activate kill switch and show 404 for all visitors?")) return;
-    try {
-        await counterDoc.set({ isKilled: true }, { merge: true });
-    } catch (e) {
-        console.error(e);
-    }
-};
-
-/* Show/hide kill screen */
-function showKillScreen() {
-    mainUI.style.display = "none";
-    const ks = document.getElementById("killScreen");
-    if (ks) {
-        ks.style.display = "flex";
-        ks.setAttribute("aria-hidden", "false");
-    } else {
-        console.warn("killScreen element not found.");
-    }
-    try { document.title = "404 Not Found"; } catch (e) {}
-    window.scrollTo(0,0);
-}
-
-function hideKillScreen() {
-    const ks = document.getElementById("killScreen");
-    if (ks) {
-        ks.style.display = "none";
-        ks.setAttribute("aria-hidden", "true");
-    }
-    mainUI.style.display = "";
-    try { document.title = "Mr. Arrington — Flirt Count"; } catch (e) {}
-    adminPanel.style.display = isAdmin ? "flex" : "none";
-    loginBtn.style.display = isAdmin ? "none" : "";
-}
-
-/* Save description to Firestore when admin stops editing (debounced) */
-let descSaveTimer = null;
-descEl.addEventListener("input", () => {
-    if(!isAdmin) return;
-    clearTimeout(descSaveTimer);
-    descSaveTimer = setTimeout(async () => {
-        const newDesc = descEl.innerText.trim();
-        try {
-            await counterDoc.set({ desc: newDesc }, { merge: true });
-        } catch (e) {
-            console.error("desc save failed", e);
-        }
-    }, 700);
-});
-descEl.addEventListener("blur", async () => {
-    if(!isAdmin) return;
-    clearTimeout(descSaveTimer);
-    const newDesc = descEl.innerText.trim();
-    try {
-        await counterDoc.set({ desc: newDesc }, { merge: true });
-    } catch (e) {
-        console.error("desc save failed", e);
-    }
-});
-
-/* Accessibility: close modal with Escape when open */
-document.addEventListener('keydown', (ev) => {
-    if (ev.key === 'Escape' && authOverlay.style.display === 'flex') {
-        hideAuthModal();
-    }
-});
-</script>
-
+      });
+    });
+  </script>
 </body>
 </html>
