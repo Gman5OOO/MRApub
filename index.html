@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mr. Arrington Flirt Count</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    background: #111;
+    color: white;
+    margin-top: 80px;
+}
+#count {
+    font-size: 90px;
+    font-weight: bold;
+    margin: 20px;
+}
+#adminPanel {
+    display: none;
+}
+#loginBtn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+#killScreen {
+    display: none;
+    font-size: 80px;
+}
+#errorO {
+    color: red;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<button id="loginBtn">Log In</button>
+
+<h1>Mr. Arrington Flirt Count</h1>
+
+<div id="count">0000</div>
+
+<p contenteditable="true" id="desc">Edit this description</p>
+
+<div id="adminPanel">
+    <button onclick="increment()">+1</button>
+    <button onclick="resetCount()">Reset</button>
+    <button onclick="killSwitch()">Kill Switch</button>
+</div>
+
+<div id="killScreen">
+    Err<span id="errorO">o</span>r 404
+</div>
+
+<script>
+const firebaseConfig = {
+   apiKey: "AIzaSyBEL3JE-abUdlGi_KwYZn7Dw5qY5f2E4SQ",
+  authDomain: "flirt-counter.firebaseapp.com",
+  projectId: "flirt-counter",
+  storageBucket: "flirt-counter.firebasestorage.app",
+  messagingSenderId: "891249082896",
+  appId: "1:891249082896:web:472f4c70b270417d474095",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const counterDoc = db.collection("data").doc("counter");
+
+const PASSWORD = "0115";
+
+let isKilled = false;
+
+async function loadCount(){
+    const doc = await counterDoc.get();
+    if(doc.exists){
+        document.getElementById("count").innerText =
+        doc.data().value.toString().padStart(4,"0");
+    } else {
+        counterDoc.set({value:0});
+    }
+}
+loadCount();
+
+async function increment(){
+    const doc = await counterDoc.get();
+    let v = doc.data().value + 1;
+    await counterDoc.set({value:v});
+    loadCount();
+}
+
+async function resetCount(){
+    await counterDoc.set({value:0});
+    loadCount();
+}
+
+document.getElementById("loginBtn").onclick = () => {
+    const pass = prompt("Enter admin password:");
+    if(pass === PASSWORD){
+        document.getElementById("adminPanel").style.display = "block";
+    }
+};
+
+function killSwitch(){
+    isKilled = true;
+    document.body.innerHTML = document.getElementById("killScreen").outerHTML;
+}
+
+document.getElementById("errorO").onclick = () => {
+    const pass = prompt("Restore code:");
+    if(pass === PASSWORD){
+        location.reload();
+    }
+}
+</script>
+
+</body>
+</html>
