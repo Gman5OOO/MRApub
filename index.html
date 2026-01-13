@@ -69,14 +69,14 @@ button {
     border: 1px solid rgba(255,255,255,0.06);
 }
 
-/* Kill/404 screen */
+/* Kill/404 overlay */
 #killScreen {
     display: none;
     position: fixed;
     inset: 0;
     background: #fafafa;
     color: #222;
-    z-index: 999;
+    z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -142,7 +142,6 @@ button {
     text-decoration: none;
 }
 
-/* subtle input mock to make it look real */
 .mock-search {
     margin-top: 12px;
     display: flex;
@@ -195,7 +194,7 @@ button {
     </div>
 </div>
 
-<!-- Realistic 404 / kill screen -->
+<!-- Realistic 404 / kill screen (kept in DOM, never replace body) -->
 <div id="killScreen" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="k404" role="document">
         <div class="left" aria-hidden="true">
@@ -211,7 +210,7 @@ button {
 
             <div class="mock-search" aria-hidden="true">
                 <div class="mock-input">Search or try the homepage</div>
-                <button class="mock-btn">Home</button>
+                <button class="mock-btn" onclick="location.href='/'">Home</button>
             </div>
 
             <div style="margin-top:14px;color:#888;font-size:13px;">
@@ -222,16 +221,6 @@ button {
 </div>
 
 <script>
-/*
-  Persistent document:
-  - path: data/counter
-  - fields: value (number), desc (string), isKilled (boolean)
-
-  Notes:
-  - Password is client-side for convenience (insecure). For real auth, use Firebase Auth.
-  - Kill switch persisted via isKilled so all clients see the 404.
-*/
-
 const firebaseConfig = {
    apiKey: "AIzaSyBEL3JE-abUdlGi_KwYZn7Dw5qY5f2E4SQ",
   authDomain: "flirt-counter.firebaseapp.com",
@@ -255,45 +244,68 @@ const descEl = document.getElementById("desc");
 const adminPanel = document.getElementById("adminPanel");
 const loginBtn = document.getElementById("loginBtn");
 const killScreen = document.getElementById("killScreen");
-const errorO = document.getElementById("errorO");
 const incBtn = document.getElementById("incBtn");
 const resetBtn = document.getElementById("resetBtn");
 const killBtn = document.getElementById("killBtn");
 const mainUI = document.getElementById("mainUI");
 
+// Defensive: ensure the kill screen has content; if not, create fallback content
+if (!killScreen || killScreen.innerHTML.trim() === "") {
+    console.warn("killScreen missing or empty, creating fallback content.");
+    const k = document.createElement('div');
+    k.id = 'killScreen';
+    k.style.position = 'fixed';
+    k.style.inset = '0';
+    k.style.background = '#fafafa';
+    k.style.color = '#222';
+    k.style.display = 'flex';
+    k.style.alignItems = 'center';
+    k.style.justifyContent = 'center';
+    k.style.zIndex = '9999';
+    k.innerHTML = '<div style="font-size:28px;color:#222;">404 — Page not found<br><small>(site is currently down)</small></div>';
+    document.body.appendChild(k);
+}
+
 // Ensure document exists with defaults
 async function ensureDoc() {
-    const doc = await counterDoc.get();
-    if(!doc.exists) {
-        await counterDoc.set({
-            value: 0,
-            desc: "Edit this description",
-            isKilled: false
-        });
+    try {
+        const doc = await counterDoc.get();
+        if(!doc.exists) {
+            await counterDoc.set({
+                value: 0,
+                desc: "Edit this description",
+                isKilled: false
+            });
+        }
+    } catch (e) {
+        console.error("ensureDoc failed", e);
     }
 }
 ensureDoc();
 
 // Real-time listener to keep UI in sync
 counterDoc.onSnapshot((doc) => {
-    if(!doc.exists) return;
-    const data = doc.data();
-    // value
-    const v = (typeof data.value === 'number') ? data.value : 0;
-    countEl.innerText = v.toString().padStart(4, "0");
-    // desc
-    if(typeof data.desc === 'string') {
-        // don't overwrite while admin is actively editing
-        if(!isAdmin || document.activeElement !== descEl) {
-            descEl.innerText = data.desc;
+    try {
+        if(!doc.exists) return;
+        const data = doc.data() || {};
+        // value
+        const v = (typeof data.value === 'number') ? data.value : 0;
+        countEl.innerText = v.toString().padStart(4, "0");
+        // desc
+        if (typeof data.desc === 'string') {
+            if(!isAdmin || document.activeElement !== descEl) {
+                descEl.innerText = data.desc;
+            }
         }
-    }
-    // kill
-    const killed = !!data.isKilled;
-    if(killed) {
-        showKillScreen();
-    } else {
-        hideKillScreen();
+        // kill
+        const killed = !!data.isKilled;
+        if(killed) {
+            showKillScreen();
+        } else {
+            hideKillScreen();
+        }
+    } catch (err) {
+        console.error("onSnapshot handler error", err);
     }
 }, (err) => {
     console.error("snapshot error", err);
@@ -345,37 +357,56 @@ killBtn.onclick = async () => {
 
 // Show/hide kill screen
 function showKillScreen() {
-    // Hide the main UI but keep DOM so event handlers remain
+    // hide main UI but keep DOM
     mainUI.style.display = "none";
-    // show kill screen
-    killScreen.style.display = "flex";
-    killScreen.setAttribute("aria-hidden", "false");
+    // show kill screen (defensive)
+    const ks = document.getElementById("killScreen");
+    if (ks) {
+        ks.style.display = "flex";
+        ks.setAttribute("aria-hidden", "false");
+    } else {
+        console.warn("killScreen element not found.");
+    }
+    // set page title to indicate 404
+    try { document.title = "404 Not Found"; } catch (e) {}
+    // ensure scroll is at top
+    window.scrollTo(0,0);
 }
 
 function hideKillScreen() {
-    killScreen.style.display = "none";
-    killScreen.setAttribute("aria-hidden", "true");
+    const ks = document.getElementById("killScreen");
+    if (ks) {
+        ks.style.display = "none";
+        ks.setAttribute("aria-hidden", "true");
+    }
     mainUI.style.display = "";
-    // Keep admin visibility correct after restore
+    // restore title
+    try { document.title = "Mr. Arrington Flirt Count"; } catch (e) {}
     adminPanel.style.display = isAdmin ? "block" : "none";
     loginBtn.style.display = isAdmin ? "none" : "";
 }
 
-// The secret 'o' button prompts for admin code to restore
-errorO.onclick = async (e) => {
-    e.stopPropagation();
-    const pass = prompt("Restore code:");
-    if(pass === PASSWORD) {
-        try {
-            await counterDoc.set({ isKilled: false }, { merge: true });
-        } catch (err) {
-            console.error("restore failed", err);
-            alert("Restore failed; check console.");
+// Delegated click handler for the secret restore "o" button.
+// Using delegation prevents missing the handler if the element is re-rendered.
+document.addEventListener('click', async (ev) => {
+    const el = ev.target;
+    if (!el) return;
+    // if the click is on the error 'o' or inside it
+    if (el.id === 'errorO' || (el.parentElement && el.parentElement.id === 'errorO')) {
+        ev.stopPropagation();
+        const pass = prompt("Restore code:");
+        if(pass === PASSWORD) {
+            try {
+                await counterDoc.set({ isKilled: false }, { merge: true });
+            } catch (err) {
+                console.error("restore failed", err);
+                alert("Restore failed; check console.");
+            }
+        } else {
+            alert("Wrong code");
         }
-    } else {
-        alert("Wrong code");
     }
-};
+});
 
 // Save description to Firestore when admin stops editing (debounced)
 let descSaveTimer = null;
